@@ -98,6 +98,36 @@ func DecodeRecordKey(key kv.Key) (tableID int64, handle int64, err error) {
 	 *   5. understanding the coding rules is a prerequisite for implementing this function,
 	 *      you can learn it in the projection 1-2 course documentation.
 	 */
+	tableID = 0
+	handle = 0
+	err = nil
+
+	// 1. check if the key is valid
+	
+	if len(key) != RecordRowKeyLen || string(key[0]) != string(tablePrefix) || 
+			string(key[TableSplitKeyLen:TableSplitKeyLen+2]) != string(recordPrefixSep) {
+		err = errInvalidRecordKey.GenWithStack("invalid record key")
+		return
+	}
+
+	// 2. get the table prefix and decode.
+	_, tableID, err = codec.DecodeInt(key[1:TableSplitKeyLen])
+	if err != nil {
+		tableID = 0
+		err = errInvalidRecordKey.GenWithStack("invalid record key")
+		return
+	}
+	// 3. get the record prefix and decode.
+	// 4. create handle.
+	_, handle, err = codec.DecodeInt(key[prefixLen:prefixLen+idLen])
+	if err != nil {
+		tableID = 0
+		handle = 0
+		err = errInvalidRecordKey.GenWithStack("invalid record key")
+		return
+	}
+	// 5. return decoded value.
+	
 	return
 }
 
@@ -148,7 +178,40 @@ func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues
 	 *   5. understanding the coding rules is a prerequisite for implementing this function,
 	 *      you can learn it in the projection 1-2 course documentation.
 	 */
-	return tableID, indexID, indexValues, nil
+
+	tableID = 0
+	indexID = 0
+	indexValues = nil
+	err = nil
+
+	// 1. check if the key is valid
+	if string(key[0]) != string(tablePrefix) || string(key[TableSplitKeyLen:TableSplitKeyLen+2]) != string(indexPrefixSep) {
+		err = errInvalidRecordKey.GenWithStack("invalid index key")
+		return
+	}
+
+	// 2. decode tableID.
+	_, tableID, err = codec.DecodeInt(key[1:TableSplitKeyLen])
+	if err != nil {
+		tableID = 0
+		err = errInvalidRecordKey.GenWithStack("invalid index key")
+		return
+	}
+
+	// 3. decode indexID.
+	_, indexID, err = codec.DecodeInt(key[prefixLen:prefixLen+idLen])
+	if err != nil {
+		tableID = 0
+		indexID = 0
+		err = errInvalidRecordKey.GenWithStack("invalid index key")
+		return
+	}
+
+	// 4. decode indexValues.
+	indexValues = key[prefixLen+idLen:]
+
+	// 5. return decoded value.
+	return
 }
 
 // DecodeIndexKey decodes the key and gets the tableID, indexID, indexValues.
