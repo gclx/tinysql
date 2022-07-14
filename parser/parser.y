@@ -3809,6 +3809,12 @@ JoinTable:
 	{
 		$$ = &ast.Join{Left: $1.(ast.ResultSetNode), Right: $3.(ast.ResultSetNode), Tp: ast.CrossJoin}
 	}
+|	TableRef JoinType OuterOpt "JOIN" TableRef "ON" Expression
+	{
+		on := &ast.OnCondition{Expr: $7}
+		$$ = &ast.Join{Left: $1.(ast.ResultSetNode), Right: $5.(ast.ResultSetNode), Tp: $2.(ast.JoinType), On: on}
+	}
+
 	/* Project 2: your code here.
 	 * You can see details about JoinTable in https://dev.mysql.com/doc/refman/8.0/en/join.html
 	 *
@@ -3819,6 +3825,8 @@ JoinTable:
          * }
          *
 	 */
+
+	
 
 JoinType:
 	"LEFT"
